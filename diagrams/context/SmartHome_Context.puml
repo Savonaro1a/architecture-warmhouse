@@ -1,0 +1,17 @@
+@startuml
+title Smart Home Context Diagram
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+top to bottom direction
+
+Person(user, "User", "Пользователь системы Умный дом")
+Person(admin, "Administrator", "Специалист по подключению к системе Умный дом")
+System(SmartHomeSystem, "Smart home system", "Система Умный дом")
+System_Ext(Sensonr, "Sensor", "Датчик температоры")
+Rel(user, SmartHomeSystem, "Управляет отоплением Проверяет температору")
+Rel(admin,SmartHomeSystem,"Подключает устройства к системе")
+Rel(SmartHomeSystem, Sensonr, "Запрашивает и устанавливает температору")
+Rel(Sensonr, SmartHomeSystem, "Передает показания температоры")
+
+@enduml

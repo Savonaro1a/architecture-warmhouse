@@ -1,0 +1,174 @@
+openapi: 3.0.0
+info:
+  title: Devices Management Service API
+  version: 1.0.0
+servers:
+  - url: https://example.com/api/v1
+paths:
+  /devices:
+    get:
+      summary: Получить список всех устройств
+      operationId: getAllDevices
+      tags:
+        - devices
+      responses:
+        '200':
+          description: Список устройств
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+        '401':
+          description: Недостаточно прав доступа
+        '500':
+          description: Внутренняя ошибка сервера
+  /devices/{device_id}:
+    get:
+      summary: Получить информацию о конкретном устройстве
+      operationId: getDeviceById
+      parameters:
+        - in: path
+          name: device_id
+          required: true
+          schema:
+            type: string
+          description: Идентификатор устройства
+      tags:
+        - devices
+      responses:
+        '200':
+          description: Информация о устройстве
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Устройство не найдено
+        '401':
+          description: Недостаточно прав доступа
+        '500':
+          description: Внутренняя ошибка сервера
+  /devices/{device_id}/state:
+    put:
+      summary: Обновить состояние устройства
+      operationId: updateDeviceState
+      parameters:
+        - in: path
+          name: device_id
+          required: true
+          schema:
+            type: string
+          description: Идентификатор устройства
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceStateRequest'
+      tags:
+        - devices
+      responses:
+        '200':
+          description: Состояние устройства успешно обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateDeviceStateResponse'
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Устройство не найдено
+        '401':
+          description: Недостаточно прав доступа
+        '500':
+          description: Внутренняя ошибка сервера
+  /commands:
+    post:
+      summary: Отправить команду устройству
+      operationId: sendCommand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendCommandRequest'
+      tags:
+        - commands
+      responses:
+        '201':
+          description: Команда отправлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendCommandResponse'
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Устройство не найдено
+        '401':
+          description: Недостаточно прав доступа
+        '500':
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        device_id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        location:
+          type: string
+        last_updated_at:
+          type: string
+          format: date-time
+    UpdateDeviceStateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        level:
+          type: integer
+        target_value:
+          type: number
+    UpdateDeviceStateResponse:
+      type: object
+      properties:
+        device_id:
+          type: string
+        new_state:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+    SendCommandRequest:
+      type: object
+      properties:
+        device_id:
+          type: string
+        command:
+          type: string
+        parameters:
+          type: object
+    SendCommandResponse:
+      type: object
+      properties:
+        command_id:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+tags:
+  - name: devices
+    description: Операции с устройствами
+  - name: commands
+    description: Операции с командами

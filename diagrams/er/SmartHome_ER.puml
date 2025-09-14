@@ -1,0 +1,111 @@
+@startuml ERDiagram
+
+title Smart Home ER Diagram
+
+entity User {
+  *id : integer
+  username : string
+  password_hash : string
+  first_name : string
+  last_name : string
+  email : string
+  phone : string
+}
+
+entity House {
+  *id : integer
+  user_id : integer
+  address : string
+  name : string
+}
+
+entity Device {
+  *id : integer
+  house_id : integer
+  type_id : integer
+  serial_number : string
+  status : string
+  location : string
+}
+
+entity DeviceType {
+  *id : integer
+  name : string
+  description : text
+}
+
+entity Module {
+  *id : integer
+  house_id : integer
+  name : string
+  description : text
+}
+
+entity TelemtryData {
+  *id : integer
+  device_id : integer
+  timestamp : datetime
+  value : float
+}
+
+User "1..*" -- "*" House : owns
+House "1..*" -- "*" Device : contains
+Device "1" -- "1" DeviceType : has_type
+Module "1..*" o-- "1..*" Device : consists_of
+Device "1" -- "*" TelemtryData : generates
+
+@enduml
+
+entity User {
+  *id : integer
+  username : string
+  password_hash : string
+  first_name : string
+  last_name : string
+  email : string
+  phone : string
+}
+
+entity House {
+  *id : integer
+  user_id : integer
+  address : string
+  name : string
+}
+
+entity Device {
+  *id : integer
+  house_id : integer
+  type_id : integer
+  serial_number : string
+  status : string
+  location : string
+}
+
+entity DeviceType {
+  *id : integer
+  name : string
+  description : text
+}
+
+entity Module {
+  *id : integer
+  house_id : integer
+  name : string
+  description : text
+}
+
+entity TelemtryData {
+  *id : integer
+  device_id : integer
+  timestamp : datetime
+  value : float
+}
+
+User "1..*" -- "*" House : owns
+House "1..*" -- "*" Device : contains
+Device "1" -- "1" DeviceType : has_type
+Module "1..*" o-- "1..*" Device : consists_of
+Device "1" -- "*" TelemtryData : generates
+
+@enduml
