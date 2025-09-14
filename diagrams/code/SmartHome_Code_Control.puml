@@ -1,0 +1,54 @@
+@startuml ClassDiagram
+
+title Smart Home Devices Management Code Diagram
+
+class APILayer {
+  +processRequest(request: Request)
+  +sendResponse(response: Response)
+}
+
+class CommandProcessor {
+  +executeCommand(command: Command)
+  +checkPolicy(policyName: String)
+}
+
+class DeviceStateManager {
+  +updateDeviceState(deviceId: String, state: DeviceState)
+  +getCurrentState(deviceId: String): DeviceState
+}
+
+class EventPublisher {
+  +publishEvent(event: Event)
+}
+
+class PolicyEnforcer {
+  +applyPolicy(policy: Policy)
+}
+
+class MessagingQueueService {
+  +enqueueMessage(message: Message)
+}
+
+class HeatingControlService {
+  +setTemperature(temp: Float)
+}
+
+class LightingControlService {
+  +turnOn()
+  +turnOff()
+}
+
+class SecuritySystemService {
+  +handleAlarm(alarmType: AlarmType)
+}
+
+APILayer --> CommandProcessor : sends commands
+CommandProcessor --> DeviceStateManager : checks current state
+CommandProcessor --> PolicyEnforcer : applies policies
+CommandProcessor --> HeatingControlService : executes heating commands
+CommandProcessor --> LightingControlService : executes lighting commands
+CommandProcessor --> SecuritySystemService : handles alarms
+DeviceStateManager --> EventPublisher : publishes state changes
+EventPublisher --> MessagingQueueService : enqueues events
+
+@enduml

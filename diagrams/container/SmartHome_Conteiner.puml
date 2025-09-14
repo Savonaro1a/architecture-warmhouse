@@ -1,0 +1,88 @@
+@startuml
+title Smart Home Container Diagram
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+top to bottom direction
+
+Person(user, "User", "Пользователь системы Smart Home")
+
+Container_Boundary(UserInteraction, "Smart Home System") {
+    Container(webApp, "Web Application", "JavaScript, React", "Веб-приложение для управления и взаимодействия с устройствами")
+    Container(mobileApp, "Mobile Application", "React Native", "Мобильное приложение для управления и взаимодействия с устройствами")
+    Container(gatewayAPI, "API Gateway", "Go", "Центральный узлел для обработки запросов пользователей и внешних систем")
+    
+    Container(auth, "Authentication & Authorization Service", "Go", "Аутентификации и авторизации пользователей")
+    
+    Container(heating, "Heating Control Service", "Go", "Управляет температурой и состоянием отопительных систем")
+    Container(lighting, "Lighting Control Service", "Go", "Управляет осветительными приборами: включает и выключает светильники, регулирует интенсивность освещения, запускает сценарии освещения")
+    Container(security, "Security System Service", "Go", "Обрабатывает сигналы от охранных датчиков, контролирует открывание дверей и окон, следит за уровнем безопасности и предупреждает пользователей о подозрительной активности")
+    Container(video, "Video Surveillance Service", "Go", "Предназначен для организации видеопотоков с камер видеонаблюдения, записи изображений и обработки тревожных событий")
+    Container(gate, "Gate Automation Service", "Go", "Управление гаражными воротами и въездными шлагбаумами, открывает и закрывает проходные зоны")
+    Container(processing, "Events Processing Service", "Go", "Координирует события от различных устройств и направляет их нужным сервисам.")
+    Container(registry, "Devices Registry Service", "Go", "Регистрирует устройства, собирает информацию о них и распределяет устройства по категориям и функциям. Включает регистрацию и идентификацию новых устройств.")
+    Container(telemetry, "Telemetry Collection Service", "Go", "Собирает данные с датчиков и устройств, сохраняя их в специализированных хранилищах для последующего анализа и представления пользователям.")
+    Container(notification, "Notification Service", "Go", "Оповещает пользователей о значимых событиях (смена режима отопления, срабатывание сигнализации и проч.)")
+    Container(messaging, "Messaging Queue Service", "Kafka", "Используется для координации потоков данных между микросервисами")
+    Container(devices, "Devices Management Service", "Go", "Предназначен для управления устройствами")
+
+    ContainerDb(dbDevice, "Database", "PostgreSQL", "Device Data Store - для хранения разнообразной информации, связанной с устройствами")
+    ContainerDb(dbProfiles, "Database", "PostgreSQL", "User Profiles Storage - для хранения персональных данных пользователей")
+    ContainerDb(dbLogs, "Database", "PostgreSQL", "Logs & Metrics Storage")
+
+    Rel(user, webApp, "Использует для управления и взаимодействия с устройствами")
+    Rel(user, mobileApp, "Использует для управления и взаимодействия с устройствами")
+    Rel(webApp, gatewayAPI, "Использует для получения данных и взаимодействия с устройствами","JSON,HTTPS")
+    Rel(mobileApp, gatewayAPI, "Использует для получения данных и взаимодействия с устройствами","JSON,HTTPS")
+    Rel(gatewayAPI, auth, "Проверка токена и прав доступа","JSON,HTTPS")
+    Rel(auth, gatewayAPI, "Запрос авторизован","JSON,HTTPS")
+
+    Rel(gatewayAPI, gate, "Передача команды","JSON,HTTPS")
+    Rel(gate, messaging, "Генерация события","JSON,HTTPS")
+
+    Rel(gatewayAPI, heating, "Передача команды","JSON,HTTPS")
+    Rel(heating, messaging, "Генерация события","JSON,HTTPS")
+    
+
+    Rel(gatewayAPI, lighting, "Передача команды","JSON,HTTPS")
+    Rel(lighting, messaging, "Генерация события","JSON,HTTPS")
+
+    Rel(gatewayAPI, video, "Передача команды","JSON,HTTPS")
+    Rel(video, messaging, "Генерация события","JSON,HTTPS")
+
+    Rel(gatewayAPI, security, "Передача команды","JSON,HTTPS")
+    Rel(security, messaging, "Генерация события","JSON,HTTPS")
+
+    Rel(messaging, processing, "Обработка результата","JSON,HTTPS")
+    Rel(processing, notification, "Уведомление пользователя")
+
+
+    Rel(heating, dbDevice, "Чтение/Запись информации")
+    Rel(gate, dbDevice, "Чтение/Запись информации")
+    Rel(video, dbDevice, "Чтение/Запись информации")
+    Rel(security, dbDevice, "Чтение/Запись информации")
+    Rel(lighting, dbDevice, "Чтение/Запись информации")
+
+    Rel(auth, dbProfiles, "Чтение/Запись информации")
+
+    Rel(messaging, telemetry, "Обработка данных телеметрии","JSON,HTTPS")
+    Rel(telemetry, dbLogs, "Чтение/Запись информации")
+    Rel(gatewayAPI, telemetry, "Просмотр данных","JSON,HTTPS")
+
+    Rel(processing, registry, "Регистрация устройства")
+    Rel(registry, dbDevice, "Чтение/Запись информации об устройстве")
+    Rel(registry, messaging, "Отправка уведомления о регистрации")
+
+    Rel(gatewayAPI, devices, "Управлением устройствами","JSON,HTTPS")
+    Rel(devices, registry, "Чтение/Запись информации об устройствах")
+    Rel(devices, messaging, "Публикует событие")
+
+}
+
+Container_Ext(device, "Умное устройство", "", "")
+
+
+Rel(device, messaging, "Отправка событий")
+Rel(messaging, device, "Исполнение команды")
+Rel(notification, user, "Доставка уведомления")
+
+@enduml

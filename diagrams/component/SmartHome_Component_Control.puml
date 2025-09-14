@@ -1,0 +1,38 @@
+@startuml
+title Smart Home Component Diagram Devices Management Service
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(DeviceControl, "Devices Management Service") {
+ 
+    Container(gatewayAPI, "API Gateway", "Go", "Центральный узлел для обработки запросов пользователей и внешних систем")
+    Container(devices, "Devices Management Service", "Go", "Предназначен для управления устройствами")
+    Container(registry, "Devices Registry Service", "Go", "Регистрирует устройства, собирает информацию о них и распределяет устройства по категориям и функциям. Включает регистрацию и идентификацию новых устройств.")
+    Container(messaging, "Messaging Queue Service", "Kafka", "Используется для координации потоков данных между микросервисами")
+    ContainerDb(dbDevice, "Database", "PostgreSQL", "Device Data Store - для хранения разнообразной информации, связанной с устройствами")
+}
+
+Rel(registry, dbDevice, "Чтение/Запись информации об устройстве")
+
+
+Container(devices, "Device Control API") {
+    Component(apiLayer, "API Layer", "Обрабатывает входящие запросы")
+    Component(commandProcessor, "Command Processor", "Получает команды от API Layer и выполняет их")
+    Component(deviceStateManager, "Device State Manager", "Ведёт учёт текущего состояния каждого устройства")
+    Component(eventPublisher, "Event Publisher", "Публикует события, возникающие в устройствах")
+    Component(policyEnforcer, "Policy Enforcer", "Применяет политику безопасности и логику выполнения команд.")
+
+    Rel(apiLayer, commandProcessor, "Отправляет команды")
+    Rel(commandProcessor,deviceStateManager, "Проверяет состояние устройства")
+    Rel(commandProcessor,policyEnforcer, "Валидация запроса на корректные значения")
+    Rel(commandProcessor,eventPublisher, "Публикует изменение состояние устройства")
+}
+
+Rel(gatewayAPI,apiLayer, "Отправляет запросы")
+Rel(deviceStateManager,registry, "Отправляет запросы")
+Rel(eventPublisher, messaging, "Публикует событие")
+
+
+@enduml
