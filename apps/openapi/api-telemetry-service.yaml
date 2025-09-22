@@ -1,0 +1,982 @@
+openapi: 3.0.3
+info:
+  title: Telemetry & Monitoring Service API
+  description: |
+    API для сбора и анализа телеметрии в экосистеме "Тёплый дом".
+    Предоставляет функциональность для получения данных с датчиков,
+    мониторинга событий устройств и управления алертами.
+  version: 1.0.0
+  contact:
+    name: Smart Home Team
+    email: api@warmhouse.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.warmhouse.com/v1
+    description: Production server
+  - url: https://staging-api.warmhouse.com/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /telemetry:
+    get:
+      summary: Получить данные телеметрии
+      description: Возвращает данные телеметрии с возможностью фильтрации и агрегации
+      tags:
+        - Telemetry
+      parameters:
+        - name: device_id
+          in: query
+          description: ID устройства для фильтрации
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: metric_name
+          in: query
+          description: Название метрики
+          required: false
+          schema:
+            type: string
+            enum: [temperature, humidity, power_consumption, brightness, motion]
+        - name: start_time
+          in: query
+          description: Начальное время (ISO 8601)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: Конечное время (ISO 8601)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: aggregation
+          in: query
+          description: Тип агрегации
+          required: false
+          schema:
+            type: string
+            enum: [none, avg, min, max, sum, count]
+            default: none
+        - name: interval
+          in: query
+          description: Интервал агрегации в секундах
+          required: false
+          schema:
+            type: integer
+            minimum: 60
+            maximum: 86400
+        - name: limit
+          in: query
+          description: Количество записей
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 1000
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+              examples:
+                temperature_data:
+                  summary: Данные температуры
+                  value:
+                    data:
+                      - device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        metric_name: "temperature"
+                        metric_value: 22.5
+                        metric_unit: "celsius"
+                        timestamp: "2024-01-15T10:30:00Z"
+                        quality: "good"
+                      - device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        metric_name: "temperature"
+                        metric_value: 22.3
+                        metric_unit: "celsius"
+                        timestamp: "2024-01-15T10:35:00Z"
+                        quality: "good"
+                    pagination:
+                      total: 2
+                      limit: 1000
+                      offset: 0
+                    aggregation:
+                      type: "none"
+                      interval: null
+                aggregated_data:
+                  summary: Агрегированные данные
+                  value:
+                    data:
+                      - device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        metric_name: "temperature"
+                        metric_value: 22.4
+                        metric_unit: "celsius"
+                        timestamp: "2024-01-15T10:00:00Z"
+                        quality: "good"
+                        aggregation: "avg"
+                        interval: 300
+                    pagination:
+                      total: 1
+                      limit: 1000
+                      offset: 0
+                    aggregation:
+                      type: "avg"
+                      interval: 300
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Отправить данные телеметрии
+      description: Принимает данные телеметрии от устройств
+      tags:
+        - Telemetry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryDataRequest'
+            examples:
+              single_metric:
+                summary: Одна метрика
+                value:
+                  device_id: "550e8400-e29b-41d4-a716-446655440000"
+                  metric_name: "temperature"
+                  metric_value: 22.5
+                  metric_unit: "celsius"
+                  quality: "good"
+                  metadata:
+                    sensor_id: "temp_001"
+                    calibration_offset: 0.1
+              multiple_metrics:
+                summary: Несколько метрик
+                value:
+                  device_id: "550e8400-e29b-41d4-a716-446655440000"
+                  metrics:
+                    - metric_name: "temperature"
+                      metric_value: 22.5
+                      metric_unit: "celsius"
+                      quality: "good"
+                    - metric_name: "humidity"
+                      metric_value: 45.2
+                      metric_unit: "percent"
+                      quality: "good"
+                    - metric_name: "power_consumption"
+                      metric_value: 15.3
+                      metric_unit: "watts"
+                      quality: "good"
+                  metadata:
+                    batch_id: "batch_001"
+                    firmware_version: "1.2.3"
+      responses:
+        '201':
+          description: Данные успешно приняты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryDataResponse'
+              examples:
+                success:
+                  summary: Данные приняты
+                  value:
+                    message: "Telemetry data received"
+                    records_processed: 1
+                    device_id: "550e8400-e29b-41d4-a716-446655440000"
+                    timestamp: "2024-01-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /events:
+    get:
+      summary: Получить события устройств
+      description: Возвращает события от устройств с возможностью фильтрации
+      tags:
+        - Events
+      parameters:
+        - name: device_id
+          in: query
+          description: ID устройства
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: event_type
+          in: query
+          description: Тип события
+          required: false
+          schema:
+            type: string
+            enum: [device_online, device_offline, sensor_reading, command_executed, error_occurred]
+        - name: severity
+          in: query
+          description: Уровень важности
+          required: false
+          schema:
+            type: string
+            enum: [info, warning, error, critical]
+        - name: start_time
+          in: query
+          description: Начальное время
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: Конечное время
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: processed
+          in: query
+          description: Фильтр по статусу обработки
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Количество записей
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventsResponse'
+              examples:
+                device_events:
+                  summary: События устройства
+                  value:
+                    events:
+                      - event_id: "550e8400-e29b-41d4-a716-446655440001"
+                        device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        event_type: "device_online"
+                        event_data:
+                          ip_address: "192.168.1.100"
+                          firmware_version: "1.2.3"
+                        severity: "info"
+                        timestamp: "2024-01-15T10:30:00Z"
+                        processed: true
+                      - event_id: "550e8400-e29b-41d4-a716-446655440002"
+                        device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        event_type: "sensor_reading"
+                        event_data:
+                          sensor_type: "temperature"
+                          value: 22.5
+                          unit: "celsius"
+                        severity: "info"
+                        timestamp: "2024-01-15T10:35:00Z"
+                        processed: true
+                    pagination:
+                      total: 2
+                      limit: 100
+                      offset: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /alerts:
+    get:
+      summary: Получить алерты
+      description: Возвращает алерты с возможностью фильтрации
+      tags:
+        - Alerts
+      parameters:
+        - name: device_id
+          in: query
+          description: ID устройства
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: query
+          description: ID пользователя
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: alert_type
+          in: query
+          description: Тип алерта
+          required: false
+          schema:
+            type: string
+            enum: [device_offline, high_temperature, low_battery, sensor_error, security_breach]
+        - name: status
+          in: query
+          description: Статус алерта
+          required: false
+          schema:
+            type: string
+            enum: [active, acknowledged, resolved]
+        - name: severity
+          in: query
+          description: Уровень критичности
+          required: false
+          schema:
+            type: string
+            enum: [info, warning, error, critical]
+        - name: limit
+          in: query
+          description: Количество записей
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertsResponse'
+              examples:
+                active_alerts:
+                  summary: Активные алерты
+                  value:
+                    alerts:
+                      - alert_id: "550e8400-e29b-41d4-a716-446655440003"
+                        device_id: "550e8400-e29b-41d4-a716-446655440000"
+                        user_id: "550e8400-e29b-41d4-a716-446655440010"
+                        alert_type: "high_temperature"
+                        title: "Высокая температура"
+                        message: "Температура в гостиной превысила 30°C"
+                        severity: "warning"
+                        status: "active"
+                        triggered_at: "2024-01-15T10:30:00Z"
+                        device_name: "Гостиная термостат"
+                        location: "living_room"
+                    pagination:
+                      total: 1
+                      limit: 50
+                      offset: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Создать алерт
+      description: Создает новый алерт
+      tags:
+        - Alerts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertCreateRequest'
+            examples:
+              temperature_alert:
+                summary: Алерт о температуре
+                value:
+                  device_id: "550e8400-e29b-41d4-a716-446655440000"
+                  user_id: "550e8400-e29b-41d4-a716-446655440010"
+                  alert_type: "high_temperature"
+                  title: "Высокая температура"
+                  message: "Температура превысила допустимый уровень"
+                  severity: "warning"
+                  metadata:
+                    threshold: 30.0
+                    current_value: 32.5
+                    unit: "celsius"
+      responses:
+        '201':
+          description: Алерт успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+              examples:
+                created:
+                  summary: Алерт создан
+                  value:
+                    alert_id: "550e8400-e29b-41d4-a716-446655440003"
+                    device_id: "550e8400-e29b-41d4-a716-446655440000"
+                    user_id: "550e8400-e29b-41d4-a716-446655440010"
+                    alert_type: "high_temperature"
+                    title: "Высокая температура"
+                    message: "Температура превысила допустимый уровень"
+                    severity: "warning"
+                    status: "active"
+                    triggered_at: "2024-01-15T10:30:00Z"
+                    created_at: "2024-01-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /alerts/{alert_id}:
+    patch:
+      summary: Обновить статус алерта
+      description: Обновляет статус алерта (acknowledge, resolve)
+      tags:
+        - Alerts
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          description: ID алерта
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertUpdateRequest'
+            examples:
+              acknowledge:
+                summary: Подтвердить алерт
+                value:
+                  status: "acknowledged"
+                  acknowledged_at: "2024-01-15T10:35:00Z"
+                  notes: "Проверяю устройство"
+              resolve:
+                summary: Решить алерт
+                value:
+                  status: "resolved"
+                  resolved_at: "2024-01-15T10:40:00Z"
+                  resolution_notes: "Проблема устранена, устройство работает нормально"
+      responses:
+        '200':
+          description: Статус алерта обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Алерт не найден
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /metrics/summary:
+    get:
+      summary: Получить сводку метрик
+      description: Возвращает агрегированные метрики для дашборда
+      tags:
+        - Metrics
+      parameters:
+        - name: device_id
+          in: query
+          description: ID устройства
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: house_id
+          in: query
+          description: ID дома
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: time_range
+          in: query
+          description: Временной диапазон
+          required: false
+          schema:
+            type: string
+            enum: [1h, 24h, 7d, 30d]
+            default: 24h
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsSummary'
+              examples:
+                summary:
+                  summary: Сводка метрик
+                  value:
+                    time_range: "24h"
+                    device_count: 15
+                    online_devices: 14
+                    offline_devices: 1
+                    total_alerts: 3
+                    active_alerts: 1
+                    metrics:
+                      temperature:
+                        current: 22.5
+                        average: 22.3
+                        min: 20.1
+                        max: 24.8
+                        unit: "celsius"
+                      humidity:
+                        current: 45.2
+                        average: 44.8
+                        min: 40.1
+                        max: 48.5
+                        unit: "percent"
+                      power_consumption:
+                        current: 125.5
+                        average: 118.3
+                        total: 2.84
+                        unit: "watts"
+                    health_score: 95
+                    last_updated: "2024-01-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TelemetryDataRequest:
+      type: object
+      required:
+        - device_id
+      properties:
+        device_id:
+          type: string
+          format: uuid
+          description: ID устройства
+        metric_name:
+          type: string
+          description: Название метрики (для одной метрики)
+        metric_value:
+          type: number
+          format: float
+          description: Значение метрики (для одной метрики)
+        metric_unit:
+          type: string
+          description: Единица измерения (для одной метрики)
+        quality:
+          type: string
+          enum: [good, uncertain, bad]
+          default: good
+          description: Качество данных
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricData'
+          description: Массив метрик (для нескольких метрик)
+        metadata:
+          type: object
+          description: Дополнительные метаданные
+
+    MetricData:
+      type: object
+      required:
+        - metric_name
+        - metric_value
+        - metric_unit
+      properties:
+        metric_name:
+          type: string
+          description: Название метрики
+        metric_value:
+          type: number
+          format: float
+          description: Значение метрики
+        metric_unit:
+          type: string
+          description: Единица измерения
+        quality:
+          type: string
+          enum: [good, uncertain, bad]
+          default: good
+          description: Качество данных
+
+    TelemetryDataResponse:
+      type: object
+      required:
+        - message
+        - records_processed
+        - device_id
+        - timestamp
+      properties:
+        message:
+          type: string
+          description: Сообщение о результате
+        records_processed:
+          type: integer
+          description: Количество обработанных записей
+        device_id:
+          type: string
+          format: uuid
+          description: ID устройства
+        timestamp:
+          type: string
+          format: date-time
+          description: Время обработки
+
+    TelemetryResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryData'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        aggregation:
+          $ref: '#/components/schemas/AggregationInfo'
+
+    TelemetryData:
+      type: object
+      required:
+        - device_id
+        - metric_name
+        - metric_value
+        - metric_unit
+        - timestamp
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        metric_name:
+          type: string
+        metric_value:
+          type: number
+          format: float
+        metric_unit:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        quality:
+          type: string
+          enum: [good, uncertain, bad]
+        metadata:
+          type: object
+        aggregation:
+          type: string
+          description: Тип агрегации (если применимо)
+        interval:
+          type: integer
+          description: Интервал агрегации в секундах
+
+    EventsResponse:
+      type: object
+      required:
+        - events
+        - pagination
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceEvent'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    DeviceEvent:
+      type: object
+      required:
+        - event_id
+        - device_id
+        - event_type
+        - event_data
+        - severity
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        device_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          enum: [device_online, device_offline, sensor_reading, command_executed, error_occurred]
+        event_data:
+          type: object
+          description: Данные события
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+        timestamp:
+          type: string
+          format: date-time
+        processed:
+          type: boolean
+          description: Статус обработки
+
+    AlertsResponse:
+      type: object
+      required:
+        - alerts
+        - pagination
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Alert:
+      type: object
+      required:
+        - alert_id
+        - device_id
+        - user_id
+        - alert_type
+        - title
+        - message
+        - severity
+        - status
+        - triggered_at
+      properties:
+        alert_id:
+          type: string
+          format: uuid
+        device_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        alert_type:
+          type: string
+          enum: [device_offline, high_temperature, low_battery, sensor_error, security_breach]
+        title:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+        triggered_at:
+          type: string
+          format: date-time
+        acknowledged_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        device_name:
+          type: string
+          description: Название устройства
+        location:
+          type: string
+          description: Местоположение
+        metadata:
+          type: object
+          description: Дополнительные данные
+
+    AlertCreateRequest:
+      type: object
+      required:
+        - device_id
+        - user_id
+        - alert_type
+        - title
+        - message
+        - severity
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        alert_type:
+          type: string
+          enum: [device_offline, high_temperature, low_battery, sensor_error, security_breach]
+        title:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+        metadata:
+          type: object
+
+    AlertUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [acknowledged, resolved]
+        acknowledged_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          description: Заметки пользователя
+        resolution_notes:
+          type: string
+          description: Заметки о решении
+
+    MetricsSummary:
+      type: object
+      required:
+        - time_range
+        - device_count
+        - online_devices
+        - offline_devices
+        - total_alerts
+        - active_alerts
+        - health_score
+        - last_updated
+      properties:
+        time_range:
+          type: string
+          enum: [1h, 24h, 7d, 30d]
+        device_count:
+          type: integer
+        online_devices:
+          type: integer
+        offline_devices:
+          type: integer
+        total_alerts:
+          type: integer
+        active_alerts:
+          type: integer
+        metrics:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MetricSummary'
+        health_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Общий показатель здоровья системы
+        last_updated:
+          type: string
+          format: date-time
+
+    MetricSummary:
+      type: object
+      required:
+        - current
+        - average
+        - unit
+      properties:
+        current:
+          type: number
+          format: float
+        average:
+          type: number
+          format: float
+        min:
+          type: number
+          format: float
+        max:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        unit:
+          type: string
+
+    AggregationInfo:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [none, avg, min, max, sum, count]
+        interval:
+          type: integer
+          description: Интервал агрегации в секундах
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

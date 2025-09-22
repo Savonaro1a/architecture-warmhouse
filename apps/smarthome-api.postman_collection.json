@@ -189,6 +189,102 @@
                 "description": "Update a sensor's value and status"
             },
             "response": []
+        },
+        {
+            "name": "Get Temperature - Kitchen",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/api/temperature?location=kitchen",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "api",
+                        "temperature"
+                    ],
+                    "query": [
+                        {
+                            "key": "location",
+                            "value": "kitchen"
+                        }
+                    ]
+                },
+                "description": "Get temperature for kitchen location"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Temperature - Living Room",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/api/temperature?location=living_room",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "api",
+                        "temperature"
+                    ],
+                    "query": [
+                        {
+                            "key": "location",
+                            "value": "living_room"
+                        }
+                    ]
+                },
+                "description": "Get temperature for living room location"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Temperature - Random",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/api/temperature",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "api",
+                        "temperature"
+                    ]
+                },
+                "description": "Get temperature with random location (default)"
+            },
+            "response": []
+        },
+        {
+            "name": "Temperature API Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/api/health",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "api",
+                        "health"
+                    ]
+                },
+                "description": "Check if the Temperature API is running"
+            },
+            "response": []
         }
     ],
     "event": [
