@@ -1,0 +1,774 @@
+openapi: 3.0.3
+info:
+  title: Device Management Service API
+  description: |
+    API для управления устройствами в экосистеме "Тёплый дом".
+    Предоставляет функциональность для регистрации, управления статусом
+    и метаданными умных устройств.
+  version: 1.0.0
+  contact:
+    name: Smart Home Team
+    email: api@warmhouse.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.warmhouse.com/v1
+    description: Production server
+  - url: https://staging-api.warmhouse.com/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /devices:
+    get:
+      summary: Получить список устройств
+      description: Возвращает список устройств с возможностью фильтрации
+      tags:
+        - Devices
+      parameters:
+        - name: house_id
+          in: query
+          description: ID дома для фильтрации
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: device_type
+          in: query
+          description: Тип устройства для фильтрации
+          required: false
+          schema:
+            type: string
+            enum: [thermostat, light, lock, camera, gate]
+        - name: status
+          in: query
+          description: Статус устройства
+          required: false
+          schema:
+            type: string
+            enum: [online, offline, maintenance, error]
+        - name: limit
+          in: query
+          description: Количество записей на странице
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Смещение для пагинации
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+              examples:
+                success:
+                  summary: Успешный ответ
+                  value:
+                    devices:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        name: "Гостиная термостат"
+                        type: "thermostat"
+                        status: "online"
+                        location: "living_room"
+                        last_seen: "2024-01-15T10:30:00Z"
+                    pagination:
+                      total: 1
+                      limit: 20
+                      offset: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Зарегистрировать новое устройство
+      description: Регистрирует новое устройство в системе
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistrationRequest'
+            examples:
+              thermostat:
+                summary: Регистрация термостата
+                value:
+                  device_type_id: "550e8400-e29b-41d4-a716-446655440001"
+                  name: "Спальня термостат"
+                  serial_number: "TH001234567"
+                  mac_address: "00:11:22:33:44:55"
+                  location: "bedroom"
+                  room: "master_bedroom"
+                  zone: "sleeping_area"
+              light:
+                summary: Регистрация умной лампы
+                value:
+                  device_type_id: "550e8400-e29b-41d4-a716-446655440002"
+                  name: "Кухня лампа"
+                  serial_number: "LT001234567"
+                  mac_address: "00:11:22:33:44:66"
+                  location: "kitchen"
+                  room: "kitchen"
+                  zone: "cooking_area"
+      responses:
+        '201':
+          description: Устройство успешно зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              examples:
+                success:
+                  summary: Успешная регистрация
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Спальня термостат"
+                    type: "thermostat"
+                    status: "offline"
+                    location: "bedroom"
+                    created_at: "2024-01-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Устройство уже зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                conflict:
+                  summary: Конфликт регистрации
+                  value:
+                    error: "Device already registered"
+                    message: "Device with serial number TH001234567 already exists"
+                    code: "DEVICE_EXISTS"
+
+  /devices/{device_id}:
+    get:
+      summary: Получить информацию об устройстве
+      description: Возвращает детальную информацию об устройстве
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceDetails'
+              examples:
+                success:
+                  summary: Информация об устройстве
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Гостиная термостат"
+                    type: "thermostat"
+                    status: "online"
+                    health_status: "healthy"
+                    location: "living_room"
+                    room: "living_room"
+                    zone: "entertainment_area"
+                    firmware_version: "1.2.3"
+                    last_seen: "2024-01-15T10:30:00Z"
+                    metadata:
+                      model: "SmartThermostat Pro"
+                      capabilities: ["temperature_control", "scheduling", "energy_monitoring"]
+                      configuration:
+                        temperature_unit: "celsius"
+                        auto_mode: true
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                not_found:
+                  summary: Устройство не найдено
+                  value:
+                    error: "Device not found"
+                    message: "Device with ID 550e8400-e29b-41d4-a716-446655440000 not found"
+                    code: "DEVICE_NOT_FOUND"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Обновить информацию об устройстве
+      description: Обновляет метаданные и конфигурацию устройства
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdateRequest'
+            examples:
+              update_location:
+                summary: Обновление местоположения
+                value:
+                  name: "Гостиная термостат (обновлено)"
+                  location: "living_room"
+                  room: "main_living_room"
+                  zone: "entertainment_area"
+              update_configuration:
+                summary: Обновление конфигурации
+                value:
+                  metadata:
+                    configuration:
+                      temperature_unit: "fahrenheit"
+                      auto_mode: false
+                      eco_mode: true
+      responses:
+        '200':
+          description: Устройство успешно обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceDetails'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Устройство не найдено
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Удалить устройство
+      description: Удаляет устройство из системы
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Устройство успешно удалено
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Устройство не найдено
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /devices/{device_id}/status:
+    patch:
+      summary: Обновить статус устройства
+      description: Обновляет статус и состояние здоровья устройства
+      tags:
+        - Device Status
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceStatusUpdateRequest'
+            examples:
+              online_status:
+                summary: Устройство онлайн
+                value:
+                  status: "online"
+                  health_status: "healthy"
+                  battery_level: 85
+                  signal_strength: 95
+                  temperature: 25.5
+              offline_status:
+                summary: Устройство офлайн
+                value:
+                  status: "offline"
+                  health_status: "unknown"
+                  last_seen: "2024-01-15T10:30:00Z"
+              error_status:
+                summary: Ошибка устройства
+                value:
+                  status: "error"
+                  health_status: "critical"
+                  error_message: "Temperature sensor malfunction"
+      responses:
+        '200':
+          description: Статус успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStatus'
+              examples:
+                success:
+                  summary: Статус обновлен
+                  value:
+                    device_id: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "online"
+                    health_status: "healthy"
+                    battery_level: 85
+                    signal_strength: 95
+                    last_seen: "2024-01-15T10:30:00Z"
+                    updated_at: "2024-01-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Устройство не найдено
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /devices/{device_id}/metadata:
+    get:
+      summary: Получить метаданные устройства
+      description: Возвращает метаданные и конфигурацию устройства
+      tags:
+        - Device Metadata
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceMetadata'
+              examples:
+                success:
+                  summary: Метаданные устройства
+                  value:
+                    device_id: "550e8400-e29b-41d4-a716-446655440000"
+                    model: "SmartThermostat Pro"
+                    firmware: "1.2.3"
+                    hardware_version: "2.1"
+                    capabilities: ["temperature_control", "scheduling", "energy_monitoring"]
+                    configuration:
+                      temperature_unit: "celsius"
+                      auto_mode: true
+                      eco_mode: false
+                      schedule:
+                        monday: "06:00-22:00"
+                        tuesday: "06:00-22:00"
+                    custom_attributes:
+                      installation_date: "2024-01-01"
+                      warranty_expires: "2025-01-01"
+        '404':
+          description: Устройство не найдено
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Обновить метаданные устройства
+      description: Обновляет метаданные и конфигурацию устройства
+      tags:
+        - Device Metadata
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID устройства
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceMetadataUpdateRequest'
+      responses:
+        '200':
+          description: Метаданные успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Устройство не найдено
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Device:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - status
+        - location
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор устройства
+        name:
+          type: string
+          description: Название устройства
+        type:
+          type: string
+          enum: [thermostat, light, lock, camera, gate]
+          description: Тип устройства
+        status:
+          type: string
+          enum: [online, offline, maintenance, error]
+          description: Статус устройства
+        location:
+          type: string
+          description: Местоположение устройства
+        last_seen:
+          type: string
+          format: date-time
+          description: Время последнего подключения
+        created_at:
+          type: string
+          format: date-time
+          description: Время создания
+
+    DeviceDetails:
+      allOf:
+        - $ref: '#/components/schemas/Device'
+        - type: object
+          properties:
+            health_status:
+              type: string
+              enum: [healthy, warning, critical, unknown]
+              description: Состояние здоровья устройства
+            room:
+              type: string
+              description: Комната
+            zone:
+              type: string
+              description: Зона
+            firmware_version:
+              type: string
+              description: Версия прошивки
+            metadata:
+              $ref: '#/components/schemas/DeviceMetadata'
+
+    DeviceRegistrationRequest:
+      type: object
+      required:
+        - device_type_id
+        - name
+        - serial_number
+        - mac_address
+        - location
+      properties:
+        device_type_id:
+          type: string
+          format: uuid
+          description: ID типа устройства
+        name:
+          type: string
+          description: Название устройства
+        serial_number:
+          type: string
+          description: Серийный номер
+        mac_address:
+          type: string
+          pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+          description: MAC адрес устройства
+        ip_address:
+          type: string
+          format: ipv4
+          description: IP адрес устройства
+        location:
+          type: string
+          description: Местоположение
+        room:
+          type: string
+          description: Комната
+        zone:
+          type: string
+          description: Зона
+
+    DeviceUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название устройства
+        location:
+          type: string
+          description: Местоположение
+        room:
+          type: string
+          description: Комната
+        zone:
+          type: string
+          description: Зона
+        metadata:
+          $ref: '#/components/schemas/DeviceMetadataUpdateRequest'
+
+    DeviceStatus:
+      type: object
+      required:
+        - device_id
+        - status
+        - health_status
+        - last_seen
+        - updated_at
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [online, offline, maintenance, error]
+        health_status:
+          type: string
+          enum: [healthy, warning, critical, unknown]
+        battery_level:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Уровень заряда батареи в процентах
+        signal_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Сила сигнала в процентах
+        temperature:
+          type: number
+          format: float
+          description: Температура устройства
+        last_seen:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DeviceStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [online, offline, maintenance, error]
+        health_status:
+          type: string
+          enum: [healthy, warning, critical, unknown]
+        battery_level:
+          type: integer
+          minimum: 0
+          maximum: 100
+        signal_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        temperature:
+          type: number
+          format: float
+        error_message:
+          type: string
+          description: Сообщение об ошибке
+
+    DeviceMetadata:
+      type: object
+      required:
+        - device_id
+        - model
+        - firmware
+        - capabilities
+        - configuration
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        model:
+          type: string
+          description: Модель устройства
+        firmware:
+          type: string
+          description: Версия прошивки
+        hardware_version:
+          type: string
+          description: Версия железа
+        software_version:
+          type: string
+          description: Версия ПО
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Возможности устройства
+        configuration:
+          type: object
+          description: Конфигурация устройства
+        custom_attributes:
+          type: object
+          description: Пользовательские атрибуты
+
+    DeviceMetadataUpdateRequest:
+      type: object
+      properties:
+        model:
+          type: string
+        firmware:
+          type: string
+        hardware_version:
+          type: string
+        software_version:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        configuration:
+          type: object
+        custom_attributes:
+          type: object
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Общее количество записей
+        limit:
+          type: integer
+          description: Количество записей на странице
+        offset:
+          type: integer
+          description: Смещение
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Тип ошибки
+        message:
+          type: string
+          description: Описание ошибки
+        code:
+          type: string
+          description: Код ошибки
+        details:
+          type: object
+          description: Дополнительные детали
+
+  responses:
+    BadRequest:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validation_error:
+              summary: Ошибка валидации
+              value:
+                error: "Validation Error"
+                message: "Invalid device type"
+                code: "VALIDATION_ERROR"
+                details:
+                  field: "device_type"
+                  value: "invalid_type"
+
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            unauthorized:
+              summary: Не авторизован
+              value:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+                code: "UNAUTHORIZED"
+
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            server_error:
+              summary: Ошибка сервера
+              value:
+                error: "Internal Server Error"
+                message: "An unexpected error occurred"
+                code: "INTERNAL_ERROR"
