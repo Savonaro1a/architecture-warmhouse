@@ -1,0 +1,30 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "Пользователь", "Использует интерфейс для управления отоплением и умными устройствами")
+
+System(system, "Экосистема умных домов", "Обеспечивает удалённое управление устройствами и интеграцию с умными домами")
+
+System_Ext(external_devices, "Внешние умные устройства", "Датчики, устройства, Zigbee, WiFi и пр.")
+System_Ext(external_services, "Внешние сервисы", "Сервисы уведомлений, интеграция по протоколам")
+
+Container(smart_home, "Управление умным домом", "Smart Home API", "Добавление/удаление любых устройств, настройка по стандартным протоколам")
+Container(devices, "Умные устройства", "Devices API", "Интеграция с разными стандартами, производителями")
+Container(access_control, "Контроль доступа", "Auth Service", "Регистрация, авторизация, управление правами, интерфейс пользователей")
+Container(monitoring, "Мониторинг", "Monitoring Service", "Опрос параметров датчиков, сравнение значений, уведомления")
+
+Rel(user, system, "Управляет умным домом")
+Rel(system, smart_home, "Управление устройствами")
+Rel(system, access_control, "Контроль доступа")
+Rel(system, monitoring, "Мониторинг и уведомления")
+
+Rel(smart_home, devices, "Интеграция по API")
+Rel(monitoring, external_services, "Отправка уведомлений")
+Rel(devices, external_devices, "Интеграция по стандартам")
+
+@enduml
