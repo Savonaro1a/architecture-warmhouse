@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(monitoring, "Мониторинг (Monitoring Service)") {
+  Component(monitoring_api, "Monitoring API", "REST", "Обеспечивает интерфейс для взаимодействия с другими сервисами")
+  Component(data_processor_service, "Data Processor Service", "Обработка данных", "Анализирует, сравнивает с порогами, выявляет события")
+  Component(alert_manager, "Alert Manager", "Уведомления", "Генерирует и отправляет уведомления пользователям и системам, по расписанию, по событию")
+  Component(history_storage, "Data Access Layer", "Postgres", "Сохраняет текущие и исторические данные датчиков")
+  Component(event_subscriber, "Device Event Subscriber", "Pub/Sub", "Регистрирует данные датчиков")
+ }
+
+Rel(event_subscriber, data_processor_service, "Передача данных для анализа")
+Rel(data_processor_service, alert_manager, "Активация оповещений оп триггерам")
+Rel(alert_manager, external_services, "Отправка уведомлений")
+Rel(data_processor_service, history_storage, "Сохранение и обновление данных")
+Rel(monitoring_api, history_storage, "Запрос и получение данных для API клиентов")
+Rel(user, monitoring_api, "Запрос данных")
+Rel(device_event_publisher, event_subscriber, "Регистрирует данные")
+Rel(alert_manager, internal_subscribers, "Публикует события")
+
+@enduml

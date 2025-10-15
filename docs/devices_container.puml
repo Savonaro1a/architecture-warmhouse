@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(devices, "Умные устройства (Devices API)") {
+  Component(api, "Devices API", "REST", "Основная точка входа для взаимодействия с внешними устройствами")
+  Component(device_registry, "Device Registry", "Сервис регистрации устройств", "Хранение и управление моделями и параметрами устройств")
+  Component(device_adapter, "Device Adapter", "Интеграция с разными стандартами", "Обеспечивает взаимодействие с устройствами по Zigbee, WiFi, BLE и пр.")
+  Component(device_comm_manager, "Device Communication Manager", "Коммуникационный менеджер", "Обработка сообщений от/к устройствам, трансляция протоколов")
+  Component(device_event_publisher, "Event Publisher", "Pub/Sub", "Публикует события изменений устройств в общую систему")
+  Component(db_access, "Data Access Layer", "Postgres", "Доступ к базе данных моделей устройств")
+}
+
+Rel(api, device_registry, "Управление моделями устройств")
+Rel(api, device_adapter, "Передача команд устройствам")
+Rel(device_adapter, device_comm_manager, "Взаимодействие с протоколами подключения")
+Rel(device_comm_manager, external_devices, "Связь с реальными устройствами (Zigbee, WiFi и т.д.)")
+Rel(device_registry, db_access, "Чтение и запись моделей устройств")
+Rel(device_comm_manager, device_event_publisher, "Публикация статусов и изменений устройств")
+Rel(device_event_publisher, internal_subscribers, "Публикует события")
+@enduml

@@ -17,26 +17,14 @@ Container(smart_home, "Управление умным домом", "Smart Home 
 Container(devices, "Умные устройства", "Devices API", "Интеграция с разными стандартами, производителями")
 Container(access_control, "Контроль доступа", "Auth Service", "Регистрация, авторизация, управление правами, интерфейс пользователей")
 Container(monitoring, "Мониторинг", "Monitoring Service", "Опрос параметров датчиков, сравнение значений, уведомления")
-Container(pubsub, "Pub/Sub", "Асинхронная доставка сообщений между сервисами")
-
-ContainerDb(access_control_db, "Пользователи и права", "Пользователи и права доступа")
-ContainerDb(monitoring_db, "Данные датчиков", "Текущие и исторические данные датчиков")
-ContainerDb(devices_db, "Модели датчиков", "Описание параметров поддерживаемых моделей")
-ContainerDb(user_devices_db, "Датчики пользователя", "Датчики пользователя")
 
 Rel(user, system, "Управляет умным домом")
 Rel(system, smart_home, "Управление устройствами")
 Rel(system, access_control, "Контроль доступа")
 Rel(system, monitoring, "Мониторинг и уведомления")
-Rel(monitoring, pubsub, "Асинхронная доставка данных датчиков")
-
-Rel(access_control, access_control_db, "БД")
-Rel(monitoring, monitoring_db, "БД")
-Rel(devices, devices_db, "БД")
-Rel(smart_home, user_devices_db, "БД")
 
 Rel(smart_home, devices, "Интеграция по API")
-Rel(pubsub, external_services, "Отправка уведомлений")
+Rel(monitoring, external_services, "Отправка уведомлений")
 Rel(devices, external_devices, "Интеграция по стандартам")
 
 @enduml

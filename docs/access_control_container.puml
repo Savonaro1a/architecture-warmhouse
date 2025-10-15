@@ -1,0 +1,28 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(access_control, "Контроль доступа (Auth Service)") {
+  Component(api_controller, "API Controller", "REST", "Обрабатывает запросы регистрации, входа в систему и получения токена")
+  Component(auth_manager, "Auth Manager", "Логика авторизации", "Проверяет логин/пароль, выдает JWT, следит за сессиями")
+  Component(reg_manager, "Registration Manager", "Логика регистрации", "Обработка регистрации новых пользователей, валидация данных")
+  Component(acl_service, "Access Control Service", "Service", "Управление ролями, правами и доступом к ресурсам")
+  Component(event_publisher, "Event Publisher", "Pub/Sub", "Публикует события регистрации, изменения профиля и доступа")
+  Component(db_access, "Data Access Layer", "Postgres", "Работает с базой данных пользователей и прав")
+}
+
+Rel(user, api_controller, "Регистрируется и/или авторизуется")
+Rel(api_controller, reg_manager, "Передает данные регистрации")
+Rel(api_controller, auth_manager, "Передает данные входа")
+Rel(reg_manager, db_access, "Создает профиль пользователя")
+Rel(auth_manager, db_access, "Запрашивает учетные данные")
+Rel(auth_manager, acl_service, "Проверка прав")
+Rel(acl_service, db_access, "Чтение/изменение прав и ролей")
+Rel(reg_manager, event_publisher, "Публикует событие регистрации")
+Rel(auth_manager, event_publisher, "Публикует событие входа-выхода")
+Rel(event_publisher, internal_subscribers, "Публикует события")
+@enduml
