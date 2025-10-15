@@ -74,9 +74,15 @@
 
 [Диаграмма контейнеров](docs/container.puml)
 
-**Диаграмма компонентов (Components)**
+**Диаграмма компонентов/микросервисов (Components)**
 
-Добавьте диаграмму для каждого из выделенных микросервисов.
+[Диаграмма компонента Умный дом (Smart Home)](docs/smart_home_container.puml)
+
+[Диаграмма компонента Контроль доступа (Auth Service)](docs/access_control_container.puml)
+
+[Диаграмма компонента Умные устройства (Devices API)](docs/devices_container.puml)
+
+[Диаграмма компонента Мониторинг (Monitoring Service)](docs/monitoring_container.puml)
 
 **Диаграмма кода (Code)**
 

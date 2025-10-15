@@ -10,21 +10,16 @@ Container_Boundary(smart_home, "Управление умным домом (Smar
   Component(api, "SmartHome REST API", "REST", "Основная точка входа для клиента и других систем")
   Component(device_manager, "Device Manager", "Бизнес-логика", "Добавление/удаление устройств, назначение устройств пользователям")
   Component(device_configurator, "Device Configurator", "Бизнес-логика", "Конфигурирование/настройка параметров подключённых устройств")
-  Component(device_state_service, "Device State", "Бизнес-логика", "Считывание состояния устройств (температура, статус)")
-  Component(access_client, "Access Control Client", "Интеграция", "Запросы в Auth Service для проверки прав пользователя")
   Component(device_event_publisher, "Event Publisher", "Pub/Sub", "Публикация событий об изменениях устройств")
-  Component(db_access, "Data Access Layer", "Postgres", "Запись и чтение устройств пользователя")
+  Component(db_access, "Data Access Layer", "Postgres", "Хранение устройств пользователя и настроек")
 }
+
 
 Rel(api, device_manager, "Запросы на добавление/удаление устройств")
 Rel(api, device_configurator, "Запросы на конфигурирование устройств")
-Rel(api, device_state_service, "Запросы на чтение состояния устройств")
-Rel(api, access_client, "Аутентификация и авторизация пользователя")
 Rel(device_manager, db_access, "Сохраняет изменения устройств пользователя")
 Rel(device_configurator, db_access, "Сохраняет параметры устройств")
-Rel(device_state_service, db_access, "Читает состояние устройств")
 Rel(device_manager, device_event_publisher, "Публикация событий об изменениях состава устройств")
 Rel(device_configurator, device_event_publisher, "Публикация событий настройки и статуса")
-Rel(api, device_event_publisher, "Публикация событий вручную по действиям пользователя")
-Rel(access_client, access_control, "Внешний вызов проверки прав через API")
+Rel(device_event_publisher, internal_subscribers, "Публикует события")
 @enduml
