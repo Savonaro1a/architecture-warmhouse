@@ -1,0 +1,35 @@
+## Project layout
+
+    mkdocs.yml    # The configuration file.
+    docs/
+        index.md  # The documentation homepage.
+        
+        
+## Context
+        
+```puml
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+' Основной пользователь
+Person(user, "Пользователь", "Использует интерфейс для управления отоплением и умными устройствами")
+
+' Экосистема умных домов (главная система)
+System(system, "Экосистема умных домов", "Дистанционное управление устройствами, интеграция с умным домом")
+
+' Внешние устройства и системы
+System_Ext(external_devices, "Внешние умные устройства", "Датчики, устройства, Zigbee, WiFi, и др.")
+System_Ext(external_services, "Внешние сервисы", "Уведомления, интеграция по протоколам и API")
+
+' Взаимосвязи
+Rel(user, system, "Управляет через приложение или web-интерфейс")
+Rel(system, external_devices, "Интеграция с устройствами, сбор данных и управление по стандартным протоколам")
+Rel(system, external_services, "Отправляет уведомления, получает или отправляет данные по API")
+
+@enduml
+```

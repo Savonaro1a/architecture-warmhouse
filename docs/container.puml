@@ -1,0 +1,42 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Context.puml>
+!include <C4/C4_Container.puml>
+!include <C4/C4_Component.puml>
+!include <C4/C4.puml>
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "Пользователь", "Использует интерфейс для управления отоплением и умными устройствами")
+
+System(system, "Экосистема умных домов", "Обеспечивает удалённое управление устройствами и интеграцию с умными домами")
+
+System_Ext(external_devices, "Внешние умные устройства", "Датчики, устройства, Zigbee, WiFi и пр.")
+System_Ext(external_services, "Внешние сервисы", "Сервисы уведомлений, интеграция по протоколам")
+
+Container(smart_home, "Управление умным домом", "Smart Home API", "Добавление/удаление любых устройств, настройка по стандартным протоколам")
+Container(devices, "Умные устройства", "Devices API", "Интеграция с разными стандартами, производителями")
+Container(access_control, "Контроль доступа", "Auth Service", "Регистрация, авторизация, управление правами, интерфейс пользователей")
+Container(monitoring, "Мониторинг", "Monitoring Service", "Опрос параметров датчиков, сравнение значений, уведомления")
+Container(pubsub, "Pub/Sub", "Асинхронная доставка сообщений между сервисами")
+
+ContainerDb(access_control_db, "Пользователи и права", "Пользователи и права доступа")
+ContainerDb(monitoring_db, "Данные датчиков", "Текущие и исторические данные датчиков")
+ContainerDb(devices_db, "Модели датчиков", "Описание параметров поддерживаемых моделей")
+ContainerDb(user_devices_db, "Датчики пользователя", "Датчики пользователя")
+
+Rel(user, system, "Управляет умным домом")
+Rel(system, smart_home, "Управление устройствами")
+Rel(system, access_control, "Контроль доступа")
+Rel(system, monitoring, "Мониторинг и уведомления")
+Rel(monitoring, pubsub, "Асинхронная доставка данных датчиков")
+
+Rel(access_control, access_control_db, "БД")
+Rel(monitoring, monitoring_db, "БД")
+Rel(devices, devices_db, "БД")
+Rel(smart_home, user_devices_db, "БД")
+
+Rel(smart_home, devices, "Интеграция по API")
+Rel(pubsub, external_services, "Отправка уведомлений")
+Rel(devices, external_devices, "Интеграция по стандартам")
+
+@enduml
