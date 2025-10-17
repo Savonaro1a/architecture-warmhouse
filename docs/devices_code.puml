@@ -1,0 +1,30 @@
+@startuml
+
+package "Умные устройства (Devices API)" {
+  class DevicesAPI {
+    +manageDevices()
+    +sendCommand()
+  }
+
+  class DeviceRegistry {
+    +registerDevice()
+    +updateDeviceModel()
+    +getDeviceModel()
+  }
+
+  class DeviceEventPublisher {
+    +publishEvent()
+    +notifySubscribers()
+  }
+
+  class DBAccess {
+    +readModels()
+    +writeModels()
+  }
+}
+
+DevicesAPI --> DeviceRegistry : Управляет моделями устройств
+DeviceRegistry --> DeviceEventPublisher : Обновляет и публикует события
+DeviceRegistry <--> DBAccess : Читает и записывает данные
+DeviceEventPublisher --> Subscriber : Уведомляет подписчиков
+@enduml

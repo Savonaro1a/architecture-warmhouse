@@ -1,0 +1,48 @@
+@startuml
+
+package "Контроль доступа (Auth Service)" {
+  class APIController {
+    +registerUser()
+    +loginUser()
+    +getToken()
+  }
+
+  class AuthManager {
+    +validateCredentials()
+    +generateJWT()
+    +manageSessions()
+  }
+
+  class RegistrationManager {
+    +validateInput()
+    +createUserProfile()
+  }
+
+  class ACLService {
+    +checkPermissions()
+    +manageRoles()
+    +updateAccessControl()
+  }
+
+  class EventPublisher {
+    +publishRegistrationEvent()
+    +publishLoginEvent()
+  }
+
+  class DBAccess {
+    +saveUser()
+    +getUser()
+    +savePermissions()
+  }
+}
+
+APIController --> RegistrationManager : calls
+APIController --> AuthManager : calls
+RegistrationManager --> DBAccess : writes
+AuthManager <--> DBAccess : reads/writes
+AuthManager --> ACLService : calls
+ACLService <--> DBAccess : reads/writes
+RegistrationManager --> EventPublisher : publishes
+AuthManager --> EventPublisher : publishes
+
+@enduml

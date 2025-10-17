@@ -1,0 +1,41 @@
+@startuml
+
+package "Мониторинг (Monitoring Service)" {
+  class MonitoringAPI {
+    +getData()
+    +handleRequest()
+  }
+
+  class DataProcessorService {
+    +analyzeData()
+    +checkThresholds()
+    +detectEvents()
+  }
+
+  class AlertManager {
+    +generateAlert()
+    +sendNotifications()
+    +scheduleNotifications()
+  }
+
+  class HistoryStorage {
+    +saveData()
+    +retrieveData()
+  }
+
+  class EventSubscriber {
+    +subscribeEvents()
+    +registerData()
+  }
+}
+
+EventSubscriber --> DataProcessorService : Передача данных для анализа
+DataProcessorService --> AlertManager : Активация оповещений по триггерам
+AlertManager --> ExternalServices : Отправка уведомлений
+DataProcessorService --> HistoryStorage : Сохранение и обновление данных
+MonitoringAPI --> HistoryStorage : Запрос и получение данных для API клиентов
+User --> MonitoringAPI : Запрос данных
+DeviceEventPublisher --> EventSubscriber : Регистрирует данные
+AlertManager --> InternalSubscribers : Публикует события
+
+@enduml

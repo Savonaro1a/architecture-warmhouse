@@ -1,0 +1,40 @@
+@startuml
+
+package "Управление умным домом (Smart Home API)" {
+  class SmartHomeAPI {
+    +addDeviceRequest()
+    +removeDeviceRequest()
+    +configureDeviceRequest()
+  }
+
+  class DeviceManager {
+    +addDevice()
+    +removeDevice()
+    +assignDeviceToUser()
+  }
+
+  class DeviceConfigurator {
+    +configureDevice()
+    +saveDeviceSettings()
+  }
+
+  class DeviceEventPublisher {
+    +publishDeviceChangeEvent()
+    +publishDeviceConfigEvent()
+  }
+
+  class DBAccess {
+    +saveDevice()
+    +updateDevice()
+    +getDevice()
+  }
+}
+
+SmartHomeAPI --> DeviceManager : Запросы на добавление/удаление устройств
+SmartHomeAPI --> DeviceConfigurator : Запросы на конфигурирование устройств
+DeviceManager <--> DBAccess : Сохраняет изменения устройств пользователя
+DeviceConfigurator <--> DBAccess : Работа с параметрами устройств
+DeviceManager --> DeviceEventPublisher : Публикация событий об изменениях устройств
+DeviceConfigurator --> DeviceEventPublisher : Публикация событий настройки и статуса
+
+@enduml

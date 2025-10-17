@@ -1,0 +1,81 @@
+@startuml ER
+
+entity "User" as user {
+  * user_id : UUID <<PK>>
+  ---
+  login : string
+  password : string
+  name : string
+  email : string
+}
+
+entity "Role" as role {
+  * role_id : UUID <<PK>>
+  ---
+  name : string
+  permissions : Object
+}
+
+entity "AccessControl" as access_control {
+  * access_id : UUID <<PK>>
+  ---
+  user_id : UUID <<FK>>
+  role_id : UUID <<FK>>
+}
+
+entity "Device" as device {
+  * device_id : UUID <<PK>>
+  ---
+  model_id : UUID <<FK>>
+  user_id : UUID <<FK>>
+  config : Object
+  type : enum
+  status : enum
+}
+
+entity "DeviceModel" as device_model {
+  * model_id : UUID <<PK>>
+  ---
+  name : string
+  protocol : Object
+  description : text
+}
+
+entity "SensorData" as sensor_data {
+  * entry_id : UUID <<PK>>
+  ---
+  device_id : UUID <<FK>>
+  timestamp : datetime
+  value : float
+  type : string
+}
+
+entity "Event" as event {
+  * event_id : UUID <<PK>>
+  ---
+  device_id : UUID <<FK>>
+  type : string
+  ts : datetime
+  payload : Object
+}
+
+entity "Alert" as alert {
+  * alert_id : UUID <<PK>>
+  ---
+  user_id : UUID <<FK>>
+  device_id : UUID <<FK>>
+  type : enum
+  status : enum
+  ts : datetime
+}
+
+user ||--o{ access_control : ""
+access_control }|--|| role : ""
+user ||--o{ device : ""
+device }|--|| device_model : ""
+device ||--o{ sensor_data : ""
+sensor_data ||--o{ event : ""
+user ||--o{ alert : ""
+event ||--o{ alert : ""
+
+@enduml
