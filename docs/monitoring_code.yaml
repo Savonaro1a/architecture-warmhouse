@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: Monitoring Service API
+  version: '1.0'
+  description: Описание API мониторинга устройств
+
+paths:
+  /monitoring/data:
+    get:
+      summary: Получить текущее значение устройства
+      operationId: getDeviceData
+      parameters:
+        - in: query
+          name: deviceId
+          required: true
+          schema:
+            type: string
+          description: Уникальный идентификатор устройства
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time  
+      responses:
+        '200':
+          description: Текущее значение устройства
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringDataResponse'
+        '400':
+          description: Ошибка в параметрах
+        '404':
+          description: Устройство не найдено
+        '401':
+          description: Неавторизован
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MonitoringDataResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorValue'
+        device:
+          $ref: '#/components/schemas/Device'
+
+    SensorValue:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          $ref: '#/components/schemas/DeviceValue'
+
+    DeviceType:
+      type: string
+      enum: [temperature, unknown]
+      example: temperature
+      description: Тип значения устройства
+
+    TemperatureValue:
+      type: object
+      properties:
+        value:
+          type: number
+          example: 21
+          description: Температура в градусах Цельсия
+
+    UnknownValue:
+      type: object
+      properties:
+        value:
+          type: object
+          description: Значение отсутствует или неопределено
+
+    DeviceValue:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        value:
+          oneOf:
+            - $ref: '#/components/schemas/TemperatureValue'
+            - $ref: '#/components/schemas/UnknownValue'
+      discriminator:
+        propertyName: type
+        mapping:
+          temperature: '#/components/schemas/TemperatureValue'
+          unknown: '#/components/schemas/UnknownValue'
+      example:
+        type: temperature
+        value: 21
+
+    Device:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        type:
+           $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+          enum: [MODEL_A, MODEL_B, MODEL_C]
+          description: Модель устройства
+        status:
+          type: string
+          enum: [active, inactive, error]

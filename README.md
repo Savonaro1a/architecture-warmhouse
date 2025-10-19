@@ -111,6 +111,14 @@
 
 Здесь приложите ссылки на документацию API для микросервисов, которые вы спроектировали в первой части проектной работы. Для документирования используйте Swagger/OpenAPI или AsyncAPI.
 
+[Auth Service API](docs/access_control_code.yaml)
+
+[Smart Home API](docs/smart_home_code.yaml)
+
+[Devices API](docs/devices_code.yaml)
+
+[Monitoring API](docs/monitoring_code.yaml)
+
 # Задание 5. Работа с docker и docker-compose
 
 Перейдите в apps.

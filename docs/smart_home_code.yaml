@@ -1,0 +1,265 @@
+openapi: 3.0.3
+info:
+  title: Smart Home API
+  description: Управление устройствами пользователя в умном доме
+  version: 1.0.0
+servers:
+  - url: https://api.warmhouse.com/api
+paths:
+  /devices:
+    post:
+      summary: Добавить новое устройство пользователя
+      description: Добавление устройства в личный кабинет пользователя
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDeviceRequest"
+      responses:
+        '201':
+          description: Устройство успешно добавлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        '400':
+          description: Некорректные параметры запроса
+        '401':
+          description: Неавторизован
+    get:
+      summary: Получить список всех устройств пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cписок устройств
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+        '401':
+          description: Неавторизован
+  /devices/{deviceId}:
+    delete:
+      summary: Удалить устройство пользователя
+      description: Удаляет устройство из кабинета пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Устройство успешно удалено
+        '401':
+          description: Неавторизован
+        '404':
+          description: Устройство не найдено
+    get:
+      summary: Получить информацию об устройстве
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Объект устройства
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        '401':
+          description: Неавторизован
+        '404':
+          description: Устройство не найдено
+  /devices/{deviceId}/value:
+    get:
+      summary: Получить текущее значение устройства
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+          description: Уникальный идентификатор устройства
+      responses:
+        '200':
+          description: Текущее значение устройства
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceValue'
+        '401':
+          description: Неавторизован
+        '404':
+          description: Устройство не найдено
+    put:
+      summary: Установить текущее значение устройства
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+          description: Идентификатор устройства
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceValue'
+      responses:
+        '204':
+          description: Значение успешно установлено
+        '400':
+          description: Ошибка в запросе (например, неверный формат значения)
+        '401':
+          description: Неавторизован
+        '404':
+          description: Устройство не найдено
+        '422':
+          description: Установка значения не поддерживается для данного типа устройства
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Установка значения не поддерживается для данного типа устройства"
+  /devices/{deviceId}/configure:
+    post:
+      summary: Настроить устройство
+      description: Изменить параметры устройства
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfigureDeviceRequest"
+      responses:
+        '200':
+          description: Настройки устройства успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        '400':
+          description: Ошибка в параметрах
+        '404':
+          description: Устройство не найдено
+        '401':
+          description: Неавторизован
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AddDeviceRequest:
+      type: object
+      required:
+        - name
+        - type
+        - model
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+          enum: [MODEL_A, MODEL_B, MODEL_C]
+          description: Модель устройства
+    ConfigureDeviceRequest:
+      type: object
+      required:
+        - params
+      properties:
+        status:
+          type: string
+          enum: [active, inactive, error]
+          description: Статус устройства
+        name:
+          type: string
+          description: Название устройства
+    Device:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        type:
+           $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+          enum: [MODEL_A, MODEL_B, MODEL_C]
+          description: Модель устройства
+        status:
+          type: string
+          enum: [active, inactive, error]
+
+    DeviceType:
+      type: string
+      enum: [temperature, unknown]
+      example: temperature
+      description: Тип значения устройства
+
+    TemperatureValue:
+      type: object
+      properties:
+        value:
+          type: number
+          example: "21"
+          description: Температура в градусах Цельсия
+
+    UnknownValue:
+      type: object
+      properties:
+        value:
+          type: object
+          description: Значение отсутствует или неопределено
+
+    DeviceValue:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        value:
+          oneOf:
+            - $ref: '#/components/schemas/TemperatureValue'
+            - $ref: '#/components/schemas/UnknownValue'
+      discriminator:
+        propertyName: type
+        mapping:
+          temperature: '#/components/schemas/TemperatureValue'
+          unknown: '#/components/schemas/UnknownValue'
+      example:
+        type: temperature
+        value: 21

@@ -3,7 +3,6 @@
 package "Мониторинг (Monitoring Service)" {
   class MonitoringAPI {
     +getData()
-    +handleRequest()
   }
 
   class DataProcessorService {

@@ -1,0 +1,150 @@
+openapi: 3.0.3
+info:
+  title: Devices API
+  version: '1.0'
+  description: >
+    API для администраторов системы, для управления поддерживаемыми системой умными устройствами.
+
+servers:
+  - url: https://api.warmhouse.com/api
+
+tags:
+  - name: DevicesAPI
+    description: Управление устройствами (manageDevices, sendCommand)
+  - name: DeviceEventPublisher
+    description: Публикация событий, уведомление подписчиков
+
+paths:
+  /devices:
+    post:
+      tags: [DevicesAPI]
+      summary: Регистрация устройства
+      operationId: registerDevice
+      requestBody:
+        description: Данные нового устройства
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '201':
+          description: Устройство успешно зарегистрировано
+        '400':
+          description: Ошибка формата запроса
+
+  /devices/{deviceId}:
+    delete:
+      tags: [DevicesAPI]
+      summary: Удалить устройство
+      operationId: removeDevice
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+          description: Идентификатор устройства
+      responses:
+        '204':
+          description: Устройство успешно удалено
+        '404':
+          description: Устройство не найдено
+
+  /events:
+    post:
+      tags: [DeviceEventPublisher]
+      summary: Публикация события устройства
+      operationId: publishEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceEvent'
+      responses:
+        '202':
+          description: Событие принято на публикацию
+
+components:
+  schemas:
+
+    Device:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        type:
+           $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+          enum: [MODEL_A, MODEL_B, MODEL_C]
+          description: Модель устройства
+        status:
+          type: string
+          enum: [active, inactive, error]
+
+    DeviceType:
+      type: string
+      enum: [temperature, unknown]
+      example: temperature
+      description: Тип значения устройства
+
+    TemperatureValue:
+      type: object
+      properties:
+        value:
+          type: number
+          example: "21"
+          description: Температура в градусах Цельсия
+
+    UnknownValue:
+      type: object
+      properties:
+        value:
+          type: object
+          description: Значение отсутствует или неопределено
+
+    DeviceValue:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        value:
+          oneOf:
+            - $ref: '#/components/schemas/TemperatureValue'
+            - $ref: '#/components/schemas/UnknownValue'
+      discriminator:
+        propertyName: type
+        mapping:
+          temperature: '#/components/schemas/TemperatureValue'
+          unknown: '#/components/schemas/UnknownValue'
+      example:
+        type: temperature
+        value: 21
+
+
+    DeviceRegistration:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+
+    DeviceEvent:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
