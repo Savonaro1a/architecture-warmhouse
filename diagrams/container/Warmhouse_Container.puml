@@ -1,0 +1,26 @@
+@startuml 
+title Warmhouse Container diagram
+
+top to bottom direction
+!include diagrams/container/C4_Container.puml
+
+Person(user, "Пользователь", "Пользуется услугами компании 'Тёплый дом'")
+System(WarmhouseSystem, "Тёплый дом")
+
+Container_Boundary(WarmhouseSystem, "Warmhouse System") {
+  Container(MobileApp, "Mobile Application", "Kotlin, Swift","Управление отоплением, светом, воротами, камерами, настройка сценариев и просмотр телеметрии")
+  Container(ApiBack, "API Backend", "Go", "Обрабатывает запросы от мобильного приложения, управляет пользователями, домами, устройствами и сценариями")
+  Container(IoTGateway, "IoT Gateway", "Go", "Принимает телеметрию от устройств и отправляет им команды по стандартным протоколам")
+  Container(Database, "Database", "PostgreSQL", "Хранит пользователей, дома, устройства, сценарии и телеметрию")
+}
+
+System_Ext(devices, "Устройства умного дома", "Физические устройства: отопление, свет, ворота, камеры, датчики")
+
+Rel(user, MobileApp, "Управляет отоплением, устройствами, наблюдает за домом")
+Rel(MobileApp, ApiBack, "HTTP/REST")
+Rel(ApiBack, IoTGateway, "Отправляет команды\nи получает статусы устройств")
+Rel(ApiBack, Database, "Читает/пишет данные пользователей,\nдомов, устройств и сценариев")
+Rel(IoTGateway, devices, "Отправляет команды")
+Rel(devices, IoTGateway, "Отправляет телеметрию")
+Rel(IoTGateway, Database, "Сохраняет телеметрию")
+@enduml
