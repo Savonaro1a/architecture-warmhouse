@@ -1,0 +1,25 @@
+@startuml
+title Warmhouse Mobile Application Component Diagram
+
+top to bottom direction
+
+!include diagrams/component/C4_Component.puml
+
+Person(user, "Пользователь", "Пользуется услугами компании 'Тёплый дом'")
+
+
+Container(MobileApp, "Mobile Application", "Kotlin, Swift") {
+    Component(UIScreens, "UI Screens", "Экран авторизации, главный экран, экраны устройств, сценариев и телеметрии")
+    Component(LocalStorage, "Local Storage", "Сохраняет настройки пользователя и кэшированные данные")
+    Component(ServiceLayer, "Service Layer", "Обрабатывает действия пользователя, содержит бизнес-логику приложения")
+    Component(ApiClient, "API Client", "Отправляет запросы к Backend через HTTP/REST")
+}
+
+Container(ApiBack, "API Backend", "Go", "Обрабатывает запросы от мобильного приложения, управляет пользователями, домами, устройствами и сценариями")
+
+Rel(user, UIScreens, "Взаимодействует с приложением")
+Rel(UIScreens,ServiceLayer,"Вызывает бизнес-логику")
+Rel(ServiceLayer,LocalStorage, "Читает/записывает настройки пользователя")
+Rel(ServiceLayer,ApiClient,"Читает/записывает данные")
+Rel(ApiClient,ApiBack,"Читает/записывает данные пользователя")
+@enduml

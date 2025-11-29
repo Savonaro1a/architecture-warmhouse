@@ -1,0 +1,28 @@
+@startuml
+title Warmhouse IoT Gateway Component Diagram
+
+top to bottom direction
+
+!include diagrams/component/C4_Component.puml
+
+Container(ApiBack, "API Backend", "Go", "Передаёт команды устройствам и запрашивает их статусы")
+System_Ext(devices, "Устройства умного дома", "Физические устройства: отопление, свет, ворота, камеры, датчики")
+Container(Database, "Database", "PostgreSQL", "Хранит телеметрию устройств")
+
+Container(IoTGateway, "IoT Gateway (Go)") {
+    Component(TelemetryReceiver, "Telemetry Receiver","Принимает телеметрию и события от устройств")
+    Component(CommandDispatcher, "Command Dispatcher","Отправляет команды устройствам")
+    Component(BackendClient, "Backend Client", "Получает команды от API Backend и отправляет статусы обратно")
+    Component(DatabaseAccess, "Database Access", "Сохраняет телеметрию в базу данных")
+}
+
+Rel(devices, TelemetryReceiver, "Отправляют телеметрию")
+Rel(ApiBack, BackendClient, "HTTP/REST:команды устройствам")
+
+Rel(BackendClient, CommandDispatcher, "Передаёт команды на выполнение")
+Rel(TelemetryReceiver, DatabaseAccess, "Сохраняет телеметрию")
+Rel(DatabaseAccess, Database, "SQL: запись телеметрии")
+
+Rel(CommandDispatcher, devices, "Отправляет команды")
+
+@enduml

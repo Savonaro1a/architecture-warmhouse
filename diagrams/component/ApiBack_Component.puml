@@ -1,0 +1,40 @@
+@startuml
+title Warmhouse API Backend Component Diagram
+
+top to bottom direction
+
+!include diagrams/component/C4_Component.puml
+
+Container(MobileApp, "Mobile Application", "Kotlin, Swift")
+Container(ApiBack, "API Backend", "Go") {
+    Component(UserService, "User Service", "Управляет данными пользователей")
+    Component(DevicesService, "Devices Service", "Управляет устройствами пользователей")
+    Component(RulesService, "Rules Service", "Управляет правилами и сценариями автоматизации")
+    Component(DatabaseAccess, "Database Access", "Читает и записывает данные в базу данных")
+    Component(TelemetryService, "Telemetry Service", "Обрабатывает телеметрию от устройств")
+    Component(IoTCommunicator, "IoT Communicator", "Обменивается данными с IoT Gateway")
+}
+
+
+Container(Database, "Database", "PostgreSQL", "Хранит данные пользователей, устройств, сценариев и телеметрии")
+Container(IoTGateway, "IoT Gateway", "Go", "Принимает телеметрию от устройств и отправляет им команды по стандартным протоколам")
+
+
+Rel(MobileApp, DevicesService, "Управление устройствами пользователя")
+Rel(MobileApp, RulesService, "Управление правилами и сценариями автоматизации")
+Rel(MobileApp, UserService, "Управление данными пользователя")
+Rel(MobileApp, TelemetryService, "Чтение телеметрии устройств")
+
+Rel(DevicesService, DatabaseAccess, "Чтение и запись данных устройств")
+Rel(UserService, DatabaseAccess, "Чтение и запись данных пользователей")
+Rel(RulesService, DatabaseAccess, "Чтение и запись правил и сценариев")
+Rel(TelemetryService, DatabaseAccess, "Чтение и запись телеметрии")
+
+
+Rel(DevicesService, IoTCommunicator, "Отправляет команды устройствам")
+Rel(RulesService, IoTCommunicator, "Выполняет сценарии: отправляет команды")
+Rel(TelemetryService, IoTCommunicator, "Запрашивает актуальные данные от устройств")
+
+Rel(DatabaseAccess, Database, "Чтение и запись данных")
+Rel(IoTCommunicator, IoTGateway, "Обмен данными с устройствами")
+@enduml
