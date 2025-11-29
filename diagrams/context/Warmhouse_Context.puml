@@ -3,7 +3,7 @@ title Warmhouse Context Diagram
 
 top to bottom direction
 
-!include C4_Context.puml
+!include diagrams/context/C4_Context.puml
 
 Person(user, "Пользователь", "Пользуется услугами компании 'Тёплый дом'")
 Person(admin, "Специалист", "Сотрудник компании 'Тёплый дом'")
@@ -19,4 +19,5 @@ Rel(system, sensor, "Команды управления отоплением")
 Rel(sensor, system, "Отправяет температуру")
 
 Rel(admin, system, "Настройка и подключение датчиков")
+
 @enduml
